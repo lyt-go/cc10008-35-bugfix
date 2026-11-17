@@ -13,9 +13,11 @@
 .
 ├── frontend/                 Vue 3 + Vite + TypeScript 前端（唯一运行单元）
 │   ├── src/views/            每个业务模块一个页面
+│   ├── src/domain/session-restore/  SESS-0003 会话边界仲裁与修复恢复领域逻辑
 │   ├── src/api/local-service.ts   本地数据服务：列表、筛选、动作流转、导出
 │   ├── src/data/             模块元数据 / 示例数据 / localStorage 持久化
 │   ├── src/stores/           会话与筛选状态
+│   ├── test/                 node:test 用例（npm test，无需额外依赖）
 │   └── vite.config.ts        dev server 配置（open: false，无 /api 代理）
 ├── .gitignore
 └── docker-compose.yml
@@ -60,6 +62,29 @@ npm run build
 | 回访分析 | `retention` | 回访模式 | 模式编号、用户分群、首次访问窗口 |
 | 数据视图 | `dataview` | 分析视图 | 视图编号、视图名称、数据源组合 |
 | 参数字典 | `paramdef` | 参数定义 | 参数编号、参数名称、参数类型 |
+
+## 会话边界修复与还原传播（SESS-0003）
+
+`frontend/src/domain/session-restore/` 实现相邻会话的边界仲裁与修复恢复，独立于业务清单持久化
+（localStorage 键 `behavior-event-trace-hub:session-restore`）：
+
+- `boundary.ts`：两种版本冲突仲裁——按会话开始时间（`startTime`）与按关键路径标识（`pathId`）。
+  前一会话归档回执与后一会话开始事件同刻到达时，回执保留在前序会话；两种策略都强制
+  「任一事件只进入一个完整会话链」，冲突事件生成相邻事件隔离单，错挂事件不再稀释完成率。
+- `service.ts`：作用域锁 + 拒绝凭据。并发还原只确认一份边界完整链路，另一请求收到
+  `RESTORE_IN_PROGRESS` / `RESTORE_ALREADY_CONFIRMED`；并发提交只保留一个修复恢复结果，
+  另一请求收到 `COMMIT_IN_PROGRESS` / `PLAN_ALREADY_COMMITTED`；同请求重试幂等。
+- `propagation.ts`：提交后把完整会话事件链送入事件溯源复核清单，并在会话记录上保留带版本号的
+  还原来源（重新修复版本递增、旧值不再显示），异常退出面板保留相邻事件隔离单。
+- 页面在「会话修复」菜单（`/session-restore`），可一键复现并发还原/提交并对比会话详情、
+  事件溯源复核清单与异常退出面板，确认相邻会话不再共享事件节点。
+
+测试：
+
+```bash
+cd frontend
+npm test       # node:test，通过 esbuild 即时加载 TS，无需安装额外依赖
+```
 
 ## 约定
 

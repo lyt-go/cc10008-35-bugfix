@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Overview from '@/views/Overview.vue'
 const Eventspec = () => import('@/views/eventspec/index.vue')
 const Session = () => import('@/views/session/index.vue')
+const SessionRestore = () => import('@/views/session-restore/index.vue')
 const Heatmap = () => import('@/views/heatmap/index.vue')
 const Feature = () => import('@/views/feature/index.vue')
 const Action = () => import('@/views/action/index.vue')
@@ -26,6 +27,7 @@ const router = createRouter({
     { path: '/', name: 'overview', component: Overview },
     { path: '/eventspec', name: 'eventspec', component: Eventspec },
     { path: '/session', name: 'session', component: Session },
+    { path: '/session-restore', name: 'session-restore', component: SessionRestore },
     { path: '/heatmap', name: 'heatmap', component: Heatmap },
     { path: '/feature', name: 'feature', component: Feature },
     { path: '/action', name: 'action', component: Action },
